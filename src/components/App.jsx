@@ -22,10 +22,7 @@ export class App extends Component {
   componentDidUpdate(_, prevState) {
     const { searchQuery, page } = this.state;
 
-    if (
-      (prevState.searchQuery !== searchQuery || prevState.page !== page) &&
-      page !== 1
-    ) {
+    if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
       this.getPhotos();
     }
   }
@@ -36,10 +33,10 @@ export class App extends Component {
     this.setState({ isLoading: true });
 
     getPhotos({ q: searchQuery, page })
-      .then(response => {
+      .then(({ hits, totalHits }) => {
         this.setState(prevState => ({
-          images: [...prevState.images, ...response],
-          hasMoreImages: Math.ceil(response.totalHits / 12) > page,
+          images: [...prevState.images, ...hits],
+          hasMoreImages: Math.ceil(totalHits / 12) > page,
         }));
       })
       .finally(() => {
@@ -49,12 +46,12 @@ export class App extends Component {
 
   handleSearchSubmit = searchQuery => {
     this.setState({ searchQuery, page: 1, images: [] }, () => {
-      this.getPhotos();
+      // this.getPhotos();
     });
   };
 
   handleLoadMoreClick = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }), this.getPhotos);
+    this.setState(prevState => ({ page: prevState.page + 1 }));
   };
 
   handleImageClick = largeImageUrl => {
@@ -73,9 +70,7 @@ export class App extends Component {
         <Searchbar onSubmit={this.handleSearchSubmit} />
         <ImageGallery images={images} onImageClick={this.handleImageClick} />
         {isLoading && <Loader />}
-        {hasMoreImages && !isLoading && (
-          <Button onClick={this.handleLoadMoreClick} />
-        )}
+        {hasMoreImages && <Button onClick={this.handleLoadMoreClick} />}
 
         {showModal && (
           <Modal

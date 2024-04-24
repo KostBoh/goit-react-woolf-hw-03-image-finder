@@ -13,7 +13,7 @@ axios.defaults.params = {
 export const getPhotos = async ({ q, page }) => {
   try {
     const response = await axios.get('', { params: { q, page } });
-    return response.data.hits;
+    return response.data;
   } catch (error) {
     console.error('Error fetching images:', error);
     return [];
