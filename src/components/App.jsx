@@ -16,49 +16,45 @@ export class App extends Component {
     isLoading: false,
     showModal: false,
     largeImageURL: '',
-    loadMoreClicked: false,
-    hasMoreImages: true,
+    hasMoreImages: false,
   };
 
   componentDidUpdate(_, prevState) {
-    const { searchQuery, page, loadMoreClicked } = this.state;
+    const { searchQuery, page } = this.state;
 
     if (
-      prevState.searchQuery !== searchQuery ||
-      prevState.page !== page ||
-      (loadMoreClicked && prevState.loadMoreClicked !== loadMoreClicked)
+      (prevState.searchQuery !== searchQuery || prevState.page !== page) &&
+      page !== 1
     ) {
-      this.getPhotos({ searchQuery, page, loadMoreClicked });
+      this.getPhotos();
     }
   }
 
   getPhotos = () => {
-    const { searchQuery, page, loadMoreClicked } = this.state;
-    const nextPage = loadMoreClicked ? page + 1 : page;
+    const { searchQuery, page } = this.state;
 
     this.setState({ isLoading: true });
 
-    getPhotos({ q: searchQuery, page: nextPage })
+    getPhotos({ q: searchQuery, page })
       .then(response => {
         this.setState(prevState => ({
-          images: loadMoreClicked
-            ? [...prevState.images, ...response]
-            : response,
-          page: nextPage,
-          hasMoreImages: response.length > 0,
+          images: [...prevState.images, ...response],
+          hasMoreImages: Math.ceil(response.totalHits / 12) > page,
         }));
       })
       .finally(() => {
-        this.setState({ isLoading: false, loadMoreClicked: false });
+        this.setState({ isLoading: false });
       });
   };
 
   handleSearchSubmit = searchQuery => {
-    this.setState({ searchQuery, page: 1, images: [] });
+    this.setState({ searchQuery, page: 1, images: [] }, () => {
+      this.getPhotos();
+    });
   };
 
   handleLoadMoreClick = () => {
-    this.setState({ loadMoreClicked: true });
+    this.setState(prevState => ({ page: prevState.page + 1 }), this.getPhotos);
   };
 
   handleImageClick = largeImageUrl => {
@@ -70,13 +66,14 @@ export class App extends Component {
   };
 
   render() {
-    const { images, isLoading, showModal, largeImageURL } = this.state;
+    const { images, isLoading, showModal, largeImageURL, hasMoreImages } =
+      this.state;
     return (
       <div className={styles.App}>
         <Searchbar onSubmit={this.handleSearchSubmit} />
         <ImageGallery images={images} onImageClick={this.handleImageClick} />
         {isLoading && <Loader />}
-        {this.state.hasMoreImages && !this.state.isLoading && (
+        {hasMoreImages && !isLoading && (
           <Button onClick={this.handleLoadMoreClick} />
         )}
 
